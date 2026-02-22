@@ -1,0 +1,247 @@
+# TVmaze REST API
+
+## Base URL
+
+https://api.tvmaze.com
+
+**Formato:** JSON\
+**Autenticación:** No requerida\
+**Rate limit:** ≥ 20 requests / 10s por IP\
+**Cache global:** 60 minutos\
+**Cache especial:** 24h (`/shows`, `/schedule/full`)\
+**CORS:** Habilitado\
+**Licencia:** CC BY-SA 4.0
+
+------------------------------------------------------------------------
+
+# Search
+
+## GET `/search/shows`
+
+Búsqueda fuzzy de shows por nombre.
+
+**Query Params** - `q` (string, requerido)
+
+Ejemplo: GET /search/shows?q=girls
+
+------------------------------------------------------------------------
+
+## GET `/singlesearch/shows`
+
+Devuelve un único resultado o 404.
+
+**Query Params** - `q` (string, requerido) - `embed` (string, opcional)
+
+Ejemplo: GET /singlesearch/shows?q=girls&embed=episodes
+
+------------------------------------------------------------------------
+
+## GET `/lookup/shows`
+
+Busca un show por ID externo.
+
+**Query Params** - `imdb` (string) - `thetvdb` (string) - `tvrage`
+(string)
+
+Ejemplo: GET /lookup/shows?imdb=tt0944947
+
+------------------------------------------------------------------------
+
+## GET `/search/people`
+
+GET /search/people?q=lauren
+
+------------------------------------------------------------------------
+
+# Schedule
+
+## GET `/schedule`
+
+Lista episodios emitidos en fecha/país.
+
+**Query Params** - `country` (ISO 3166-1, default US) - `date`
+(YYYY-MM-DD, default hoy)
+
+Ejemplo: GET /schedule?country=US&date=2014-12-01
+
+------------------------------------------------------------------------
+
+## GET `/schedule/web`
+
+GET /schedule/web?date=2020-05-29
+
+------------------------------------------------------------------------
+
+## GET `/schedule/full`
+
+Todos los episodios futuros conocidos.
+
+------------------------------------------------------------------------
+
+# Shows
+
+## GET `/shows/{id}`
+
+Información principal del show.
+
+**Path Param** - `id` (int)
+
+**Query Param** - `embed` (opcional)
+
+Ejemplo: GET /shows/1?embed=cast
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/episodes`
+
+-   `specials=1` (opcional)
+
+Ejemplo: GET /shows/1/episodes?specials=1
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/episodebynumber`
+
+Query Params: - `season` (int) - `number` (int)
+
+Ejemplo: GET /shows/1/episodebynumber?season=1&number=1
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/episodesbydate`
+
+GET /shows/1/episodesbydate?date=2013-07-01
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/seasons`
+
+GET /shows/1/seasons
+
+------------------------------------------------------------------------
+
+## GET `/seasons/{id}/episodes`
+
+GET /seasons/1/episodes?embed=guestcast
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/cast`
+
+GET /shows/1/cast
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/crew`
+
+GET /shows/1/crew
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/akas`
+
+GET /shows/1/akas
+
+------------------------------------------------------------------------
+
+## GET `/shows/{id}/images`
+
+Tipos: poster, banner, background, typography
+
+------------------------------------------------------------------------
+
+## GET `/shows`
+
+Index paginado (máx 250 resultados por página)
+
+GET /shows?page=1
+
+------------------------------------------------------------------------
+
+# Episodes
+
+## GET `/episodes/{id}`
+
+GET /episodes/1?embed=show
+
+------------------------------------------------------------------------
+
+## GET `/episodes/{id}/guestcast`
+
+GET /episodes/1/guestcast
+
+------------------------------------------------------------------------
+
+## GET `/episodes/{id}/guestcrew`
+
+GET /episodes/1/guestcrew
+
+------------------------------------------------------------------------
+
+# People
+
+## GET `/people/{id}`
+
+GET /people/1?embed=castcredits
+
+------------------------------------------------------------------------
+
+## GET `/people/{id}/castcredits`
+
+GET /people/1/castcredits?embed=show
+
+------------------------------------------------------------------------
+
+## GET `/people/{id}/crewcredits`
+
+GET /people/100/crewcredits
+
+------------------------------------------------------------------------
+
+## GET `/people/{id}/guestcastcredits`
+
+GET /people/1/guestcastcredits?embed=episode
+
+------------------------------------------------------------------------
+
+## GET `/people`
+
+Index paginado (máx 1000 resultados por página)
+
+GET /people?page=1
+
+------------------------------------------------------------------------
+
+# Updates
+
+## GET `/updates/shows`
+
+GET /updates/shows?since=day
+
+Valores: - day - week - month
+
+------------------------------------------------------------------------
+
+## GET `/updates/people`
+
+GET /updates/people?since=week
+
+------------------------------------------------------------------------
+
+# Embedding
+
+Sintaxis: ?embed=episodes ?embed=cast ?embed\[\]=episodes&embed\[\]=cast
+
+------------------------------------------------------------------------
+
+# Images
+
+Estructura: { "image": { "medium": "...", "original": "..." } }
+
+------------------------------------------------------------------------
+
+# HTTP Considerations
+
+-   Manejar HTTP 429 (rate limit)
+-   Reutilizar conexiones
+-   Definir User-Agent identificable

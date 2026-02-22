@@ -1,104 +1,46 @@
-const BASE_URL = "https://api.tvmaze.com";
+import {
+  AppEpisode,
+  AppScheduleEntry,
+  AppSearchResult,
+  AppShow,
+  AppShowImage,
+} from "@/lib/contentTypes";
+import { withProviderFallback } from "@/lib/contentProvider";
+import { tmdbProvider } from "@/lib/tmdbProvider";
+import { tvmazeProvider } from "@/lib/tvmazeProvider";
 
-// --- Types ---
+// Backward-compatible type exports (used across existing components)
+export type TVMazeShow = AppShow;
+export type TVMazeEpisode = AppEpisode;
+export type TVMazeScheduleEntry = AppScheduleEntry;
+export type TVMazeSearchResult = AppSearchResult;
+export type TVMazeShowImage = AppShowImage;
 
-export interface TVMazeShow {
-  id: number;
-  name: string;
-  type: string;
-  language: string;
-  genres: string[];
-  status: string; // "Running", "Ended", "To Be Determined", "In Development"
-  runtime: number | null;
-  premiered: string | null;
-  ended: string | null;
-  officialSite: string | null;
-  schedule: { time: string; days: string[] };
-  rating: { average: number | null };
-  weight: number;
-  network: { id: number; name: string; country: { name: string; code: string } } | null;
-  webChannel: { id: number; name: string; country: { name: string; code: string } | null } | null;
-  image: { medium: string; original: string } | null;
-  summary: string | null;
-  updated: number;
-  _links: { self: { href: string }; previousepisode?: { href: string }; nextepisode?: { href: string } };
-}
-
-export interface TVMazeEpisode {
-  id: number;
-  url: string;
-  name: string;
-  season: number;
-  number: number | null;
-  type: string;
-  airdate: string;
-  airtime: string;
-  airstamp: string;
-  runtime: number | null;
-  rating: { average: number | null };
-  image: { medium: string; original: string } | null;
-  summary: string | null;
-  _links: { self: { href: string }; show?: { href: string } };
-}
-
-export interface TVMazeScheduleEntry {
-  id: number;
-  url: string;
-  name: string;
-  season: number;
-  number: number | null;
-  type: string;
-  airdate: string;
-  airtime: string;
-  airstamp: string;
-  runtime: number | null;
-  rating: { average: number | null };
-  image: { medium: string; original: string } | null;
-  summary: string | null;
-  show: TVMazeShow;
-  _embedded?: { show: TVMazeShow };
-}
-
-export interface TVMazeSearchResult {
-  score: number;
-  show: TVMazeShow;
-}
-
-// --- API Functions ---
+const callWithFallback = <T>(fn: (provider: typeof tmdbProvider | typeof tvmazeProvider) => Promise<T>) =>
+  withProviderFallback(tmdbProvider, tvmazeProvider, fn);
 
 export async function searchShows(query: string): Promise<TVMazeSearchResult[]> {
-  const res = await fetch(`${BASE_URL}/search/shows?q=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error("Failed to search shows");
-  return res.json();
+  return callWithFallback((provider) => provider.searchShows(query));
 }
 
 export async function getShow(id: number): Promise<TVMazeShow> {
-  const res = await fetch(`${BASE_URL}/shows/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch show");
-  return res.json();
+  return callWithFallback((provider) => provider.getShow(id));
 }
 
-export async function getShowEpisodes(id: number): Promise<TVMazeEpisode[]> {
-  const res = await fetch(`${BASE_URL}/shows/${id}/episodes`);
-  if (!res.ok) throw new Error("Failed to fetch episodes");
-  return res.json();
+export async function getShowEpisodes(id: number, seasonNumber?: number): Promise<TVMazeEpisode[]> {
+  return callWithFallback((provider) => provider.getShowEpisodes(id, seasonNumber));
+}
+
+export async function getShowImages(id: number): Promise<TVMazeShowImage[]> {
+  return callWithFallback((provider) => provider.getShowImages(id));
 }
 
 export async function getSchedule(countryCode = "US", date?: string): Promise<TVMazeScheduleEntry[]> {
-  const params = new URLSearchParams({ country: countryCode });
-  if (date) params.set("date", date);
-  const res = await fetch(`${BASE_URL}/schedule?${params}`);
-  if (!res.ok) throw new Error("Failed to fetch schedule");
-  return res.json();
+  return callWithFallback((provider) => provider.getSchedule(countryCode, date));
 }
 
 export async function getWebSchedule(date?: string, countryCode?: string): Promise<TVMazeScheduleEntry[]> {
-  const params = new URLSearchParams();
-  if (date) params.set("date", date);
-  if (countryCode !== undefined) params.set("country", countryCode);
-  const res = await fetch(`${BASE_URL}/schedule/web?${params}`);
-  if (!res.ok) throw new Error("Failed to fetch web schedule");
-  return res.json();
+  return callWithFallback((provider) => provider.getWebSchedule(date, countryCode));
 }
 
 export function stripHtml(html: string | null): string {
@@ -111,5 +53,21 @@ export function getShowNetwork(show: TVMazeShow): string {
 }
 
 export function getShowImage(show: TVMazeShow): string | null {
-  return show.image?.medium || show.image?.original || null;
+  return show.image?.original || show.image?.medium || null;
+}
+
+export function getBestPosterFromImages(images: TVMazeShowImage[]): string | null {
+  const posters = images.filter((img) => img.type === "poster");
+  const source = posters.length > 0 ? posters : images;
+
+  if (source.length === 0) return null;
+
+  const sorted = [...source].sort((a, b) => {
+    const aArea = (a.resolutions.original?.width || 0) * (a.resolutions.original?.height || 0);
+    const bArea = (b.resolutions.original?.width || 0) * (b.resolutions.original?.height || 0);
+    return bArea - aArea;
+  });
+
+  const best = sorted[0];
+  return best.resolutions.original?.url || best.resolutions.medium?.url || null;
 }

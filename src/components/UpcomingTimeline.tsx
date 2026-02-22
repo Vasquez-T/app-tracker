@@ -3,7 +3,11 @@ import { getSchedule, getWebSchedule, TVMazeScheduleEntry, getShowImage } from "
 import { Calendar, Loader2, Tv } from "lucide-react";
 import { format } from "date-fns";
 
-const UpcomingTimeline = () => {
+interface UpcomingTimelineProps {
+  countryCode?: string;
+}
+
+const UpcomingTimeline = ({ countryCode = "US" }: UpcomingTimelineProps) => {
   const [entries, setEntries] = useState<TVMazeScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [scheduleType, setScheduleType] = useState<"tv" | "web">("tv");
@@ -12,18 +16,22 @@ const UpcomingTimeline = () => {
 
   useEffect(() => {
     setLoading(true);
-    const fetcher = scheduleType === "tv" ? getSchedule("US", today) : getWebSchedule(today);
+    const fetcher =
+      scheduleType === "tv" ? getSchedule(countryCode, today) : getWebSchedule(today, countryCode);
     fetcher
       .then((data) => setEntries(data.slice(0, 20)))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [scheduleType, today]);
+  }, [scheduleType, today, countryCode]);
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="w-4 h-4 text-primary" />
         <h2 className="font-display text-lg font-bold text-foreground">Today's Schedule</h2>
+        <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
+          {countryCode.toUpperCase()}
+        </span>
       </div>
 
       <div className="flex rounded-lg border border-border overflow-hidden mb-4">
