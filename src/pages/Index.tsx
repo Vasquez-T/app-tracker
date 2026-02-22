@@ -3,9 +3,10 @@ import { searchShows, TVMazeShow, TVMazeSearchResult } from "@/lib/tvmaze";
 import ShowCard from "@/components/ShowCard";
 import EpisodeList from "@/components/EpisodeList";
 import UpcomingTimeline from "@/components/UpcomingTimeline";
-import { Tv, Search, Filter, Loader2 } from "lucide-react";
+import WeeklyCalendar from "@/components/WeeklyCalendar";
+import { Tv, Search, Filter, Loader2, CalendarDays } from "lucide-react";
 
-type Tab = "search" | "tracked";
+type Tab = "search" | "tracked" | "calendar";
 
 const Index = () => {
   const [trackedShows, setTrackedShows] = useState<TVMazeShow[]>([]);
@@ -55,7 +56,7 @@ const Index = () => {
   };
 
   const displayShows: TVMazeShow[] =
-    tab === "tracked" ? trackedShows : searchResults.map((r) => r.show);
+    tab === "tracked" ? trackedShows : tab === "search" ? searchResults.map((r) => r.show) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,6 +83,8 @@ const Index = () => {
             onToggleWatched={toggleWatched}
             onBack={() => setSelectedShow(null)}
           />
+        ) : tab === "calendar" ? (
+          <WeeklyCalendar trackedShows={trackedShows} onSelectShow={setSelectedShow} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             {/* Main content */}
@@ -126,6 +129,13 @@ const Index = () => {
                     }`}
                   >
                     Tracking ({trackedShows.length})
+                  </button>
+                  <button
+                    onClick={() => setTab("calendar")}
+                    className="px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-1.5 bg-card text-muted-foreground hover:text-foreground"
+                  >
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    Calendar
                   </button>
                 </div>
               </div>
